@@ -53,10 +53,17 @@ export function QuickOperation({ products, onAddProduct, onSellProduct, template
   };
 
   const findProductByImei = useCallback((searchImei) => {
-    return products.find(p => 
+    return products.find(p =>
       p.imei.toLowerCase() === searchImei.toLowerCase().trim()
     );
   }, [products]);
+
+  // Reconhece o MODELO pelo código de barras cadastrado no Modelo Base.
+  const findTemplateByBarcode = useCallback((code) => {
+    const c = code.toLowerCase().trim();
+    if (!c) return null;
+    return templates.find(t => t.barcode && t.barcode.toLowerCase().trim() === c);
+  }, [templates]);
 
   const playSuccessSound = () => {
     try {
@@ -121,6 +128,17 @@ export function QuickOperation({ products, onAddProduct, onSellProduct, template
   };
 
   const handleEntrance = (scannedImei) => {
+    // 1) É o código de um MODELO? Então seleciona o modelo e aguarda os IMEIs.
+    const matchedTemplate = findTemplateByBarcode(scannedImei);
+    if (matchedTemplate) {
+      setSelectedTemplate(matchedTemplate.id);
+      playSuccessSound();
+      showFeedback('success', `Modelo reconhecido: ${matchedTemplate.name}. Agora bipe os IMEIs.`);
+      setImei('');
+      return;
+    }
+
+    // 2) Caso contrário, trata como IMEI do aparelho.
     const existingProduct = findProductByImei(scannedImei);
     if (existingProduct) {
       playErrorSound();
@@ -132,7 +150,7 @@ export function QuickOperation({ products, onAddProduct, onSellProduct, template
     const template = getSelectedTemplateData();
     if (!template) {
       playErrorSound();
-      showFeedback('error', 'Selecione um modelo base para cadastro!');
+      showFeedback('error', 'Bipe o código do modelo ou selecione um modelo base primeiro!');
       return;
     }
 
@@ -320,7 +338,7 @@ export function QuickOperation({ products, onAddProduct, onSellProduct, template
           {/* Barcode Input */}
           <div className="mb-6">
             <label className="block text-sm font-medium text-slate-300 mb-2">
-              {mode === 'entrada' ? 'Bipe o IMEI do aparelho' : 'Bipe o IMEI para venda'}
+              {mode === 'entrada' ? 'Bipe o código do modelo ou o IMEI do aparelho' : 'Bipe o IMEI para venda'}
             </label>
             <div className="relative">
               <Barcode className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-500 pointer-events-none" />
@@ -343,7 +361,9 @@ export function QuickOperation({ products, onAddProduct, onSellProduct, template
               )}
             </div>
             <p className="text-xs text-slate-500 mt-2">
-              Pressione Enter ou utilize o leitor de código de barras
+              {mode === 'entrada'
+                ? 'Bipe o código do modelo para selecioná-lo, depois bipe os IMEIs dos aparelhos'
+                : 'Pressione Enter ou utilize o leitor de código de barras'}
             </p>
           </div>
 

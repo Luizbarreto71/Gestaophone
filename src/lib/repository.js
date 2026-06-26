@@ -74,6 +74,7 @@ const templateToDb = (t) => ({
   cost_price: t.costPrice,
   sale_price: t.salePrice,
   min_quantity: t.minQuantity,
+  barcode: t.barcode ?? null,
 });
 const templateFromDb = (r) => ({
   id: r.id,
@@ -84,6 +85,7 @@ const templateFromDb = (r) => ({
   costPrice: num(r.cost_price),
   salePrice: num(r.sale_price),
   minQuantity: r.min_quantity,
+  barcode: r.barcode ?? '',
 });
 
 const weeklyFromDb = (r) => ({ week: r.week, sales: num(r.sales), profit: num(r.profit) });

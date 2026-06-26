@@ -7,7 +7,8 @@ import {
   Save,
   AlertTriangle,
   KeyRound,
-  CheckCircle
+  CheckCircle,
+  Barcode
 } from 'lucide-react';
 import { Card } from './ui/Card';
 import { Button } from './ui/Button';
@@ -91,6 +92,16 @@ export function Settings({
                   <span className="text-slate-400">Estoque Mínimo:</span>
                   <span className="text-slate-50">{template.minQuantity} un.</span>
                 </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-slate-400 flex items-center gap-1">
+                    <Barcode className="w-3.5 h-3.5" /> Código:
+                  </span>
+                  {template.barcode ? (
+                    <span className="font-mono text-xs text-slate-300">{template.barcode}</span>
+                  ) : (
+                    <span className="text-xs text-slate-600">não definido</span>
+                  )}
+                </div>
               </div>
 
               <div className="flex items-center gap-2 mt-4 pt-4 border-t border-slate-800">
@@ -161,17 +172,20 @@ export function Settings({
         </div>
       </div>
 
-      {/* Template Modal */}
-      <TemplateModal
-        isOpen={isTemplateModalOpen}
-        onClose={() => {
-          setIsTemplateModalOpen(false);
-          setEditingTemplate(null);
-        }}
-        onAdd={onAddTemplate}
-        onEdit={onEditTemplate}
-        template={editingTemplate}
-      />
+      {/* Template Modal — key remonta o form com os dados certos ao editar/criar */}
+      {isTemplateModalOpen && (
+        <TemplateModal
+          key={editingTemplate?.id || 'new'}
+          isOpen={isTemplateModalOpen}
+          onClose={() => {
+            setIsTemplateModalOpen(false);
+            setEditingTemplate(null);
+          }}
+          onAdd={onAddTemplate}
+          onEdit={onEditTemplate}
+          template={editingTemplate}
+        />
+      )}
 
       {/* Reset Confirmation Modal */}
       <Modal
@@ -307,31 +321,18 @@ function PasswordCard() {
 
 // Template Modal Component
 function TemplateModal({ isOpen, onClose, onAdd, onEdit, template }) {
-  const [formData, setFormData] = useState({
-    name: '',
-    brand: '',
-    category: 'Smartphone',
-    condition: 'Novo',
-    costPrice: '',
-    salePrice: '',
-    minQuantity: ''
-  });
+  // Inicializa direto do template (o modal é remontado via key ao editar).
+  const [formData, setFormData] = useState(() => ({
+    name: template?.name ?? '',
+    brand: template?.brand ?? '',
+    category: template?.category ?? 'Smartphone',
+    condition: template?.condition ?? 'Novo',
+    costPrice: template?.costPrice?.toString() ?? '',
+    salePrice: template?.salePrice?.toString() ?? '',
+    minQuantity: template?.minQuantity?.toString() ?? '',
+    barcode: template?.barcode ?? ''
+  }));
   const [errors, setErrors] = useState({});
-
-  // Populate form when editing
-  useState(() => {
-    if (template) {
-      setFormData({
-        name: template.name,
-        brand: template.brand,
-        category: template.category,
-        condition: template.condition,
-        costPrice: template.costPrice.toString(),
-        salePrice: template.salePrice.toString(),
-        minQuantity: template.minQuantity.toString()
-      });
-    }
-  });
 
   const validate = () => {
     const newErrors = {};
@@ -468,6 +469,17 @@ function TemplateModal({ isOpen, onClose, onAdd, onEdit, template }) {
               error={errors.salePrice}
               placeholder="0,00"
               step="0.01"
+            />
+          </div>
+
+          <div className="col-span-2">
+            <Input
+              label="Código de Barras do Modelo"
+              name="barcode"
+              value={formData.barcode}
+              onChange={handleChange}
+              placeholder="Bipe ou digite o código da caixa/modelo"
+              helperText="Na Operação Rápida, bipar este código seleciona o modelo automaticamente"
             />
           </div>
         </div>

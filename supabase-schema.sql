@@ -32,9 +32,13 @@ CREATE TABLE IF NOT EXISTS templates (
   cost_price DECIMAL(10,2) NOT NULL,
   sale_price DECIMAL(10,2) NOT NULL,
   min_quantity INTEGER NOT NULL DEFAULT 1,
+  barcode VARCHAR(100),
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
+
+-- Se a tabela templates já existir, rode apenas isto para adicionar o código:
+ALTER TABLE templates ADD COLUMN IF NOT EXISTS barcode VARCHAR(100);
 
 -- Sales table
 CREATE TABLE IF NOT EXISTS sales (

@@ -9,7 +9,8 @@ import {
   AlertTriangle,
   X,
   ChevronLeft,
-  ChevronRight
+  ChevronRight,
+  FileText
 } from 'lucide-react';
 import { Card } from './ui/Card';
 import { Button } from './ui/Button';
@@ -79,6 +80,55 @@ export function Inventory({ products, onAddProduct, onEditProduct, onDeleteProdu
   // Low stock warning
   const isLowStock = (product) => product.quantity <= product.minQuantity;
 
+  // Exporta a lista (respeitando os filtros ativos) como arquivo de texto
+  // para contagem geral de estoque.
+  const handleExportTxt = () => {
+    const list = filteredProducts;
+    const now = new Date();
+    const stamp = now.toLocaleString('pt-BR');
+    const totalUnits = list.reduce((acc, p) => acc + (Number(p.quantity) || 0), 0);
+
+    // Resumo por modelo
+    const byModel = {};
+    list.forEach((p) => {
+      byModel[p.name] = (byModel[p.name] || 0) + (Number(p.quantity) || 0);
+    });
+    const resumo = Object.entries(byModel)
+      .sort((a, b) => a[0].localeCompare(b[0]))
+      .map(([name, qty]) => `  ${name} — ${qty} un`)
+      .join('\n');
+
+    const statusLabel = (s) => (statusTags[s] ? statusTags[s].label : s);
+
+    const detalhado = list
+      .map((p, i) => {
+        const linha1 = `${String(i + 1).padStart(3, '0')}. ${p.name}  [${statusLabel(p.status)}]`;
+        const linha2 = `     IMEI: ${p.imei}  |  Qtd: ${p.quantity}  |  Marca: ${p.brand}  |  Venda: ${formatCurrency(p.salePrice)}`;
+        return `${linha1}\n${linha2}`;
+      })
+      .join('\n\n');
+
+    const sep = '='.repeat(50);
+    const filtroNota = hasActiveFilters ? ' (filtros aplicados)' : '';
+    const content =
+      `GESTAOPHONE - CONTAGEM DE ESTOQUE${filtroNota}\n` +
+      `Gerado em: ${stamp}\n` +
+      `Itens listados: ${list.length}  |  Unidades totais: ${totalUnits}\n\n` +
+      `${sep}\nRESUMO POR MODELO\n${sep}\n${resumo || '  (vazio)'}\n\n` +
+      `${sep}\nDETALHADO\n${sep}\n${detalhado || '  (vazio)'}\n`;
+
+    const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    const fileStamp = now.toISOString().slice(0, 10);
+    a.href = url;
+    a.download = `contagem-estoque-${fileStamp}.txt`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
+
   return (
     <div className="space-y-6 animate-fade-in">
       {/* Header */}
@@ -87,10 +137,16 @@ export function Inventory({ products, onAddProduct, onEditProduct, onDeleteProdu
         title="Gestão de Inventário"
         subtitle={`${filteredProducts.length} de ${products.length} produtos`}
         actions={
-          <Button onClick={() => setIsAddModalOpen(true)}>
-            <Plus className="w-4 h-4 mr-2" />
-            Novo Produto
-          </Button>
+          <div className="flex items-center gap-3">
+            <Button variant="secondary" onClick={handleExportTxt}>
+              <FileText className="w-4 h-4 mr-2" />
+              Exportar TXT
+            </Button>
+            <Button onClick={() => setIsAddModalOpen(true)}>
+              <Plus className="w-4 h-4 mr-2" />
+              Novo Produto
+            </Button>
+          </div>
         }
       />
 
