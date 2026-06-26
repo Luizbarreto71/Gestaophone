@@ -4,7 +4,7 @@ export function Card({ className, children, ...props }) {
   return (
     <div
       className={cn(
-        'bg-surface border border-border rounded-xl p-6 shadow-sm',
+        'bg-slate-900/40 border border-slate-800 rounded-xl p-6 shadow-sm shadow-black/20 backdrop-blur-sm',
         className
       )}
       {...props}
@@ -26,7 +26,7 @@ export function CardTitle({ className, children, ...props }) {
   return (
     <h3
       className={cn(
-        'text-lg font-semibold text-navy-900 tracking-tight',
+        'text-lg font-semibold text-slate-50 tracking-tight',
         className
       )}
       {...props}
@@ -46,30 +46,36 @@ export function CardContent({ className, children, ...props }) {
 
 export function MetricCard({ icon: Icon, title, value, subtitle, trend, trendUp, className }) {
   return (
-    <Card className={cn('card-hover relative overflow-hidden', className)}>
+    <Card
+      className={cn(
+        'relative overflow-hidden transition-all duration-300',
+        'hover:-translate-y-0.5 hover:border-slate-700 hover:shadow-lg hover:shadow-black/30',
+        className
+      )}
+    >
       {/* Gradient background accent */}
-      <div className="absolute -right-8 -top-8 w-32 h-32 bg-primary-500/5 rounded-full blur-2xl" />
+      <div className="absolute -right-8 -top-8 w-32 h-32 bg-blue-500/5 rounded-full blur-2xl" />
       
       <div className="relative">
         <div className="flex items-center justify-between mb-2">
-          <span className="text-sm font-medium text-gray-500">{title}</span>
-          <div className="p-2 bg-primary-50 rounded-lg">
-            <Icon className="w-4 h-4 text-primary-600" />
+          <span className="text-sm font-medium text-slate-400">{title}</span>
+          <div className="p-2 bg-blue-500/10 rounded-lg">
+            <Icon className="w-4 h-4 text-blue-400" />
           </div>
         </div>
         
-        <div className="text-2xl font-bold text-navy-900 mb-1">
+        <div className="text-2xl font-bold text-slate-50 mb-1 tabular-nums tracking-tight">
           {value}
         </div>
         
         {subtitle && (
-          <p className="text-xs text-gray-400 mb-2">{subtitle}</p>
+          <p className="text-xs text-slate-500 mb-2">{subtitle}</p>
         )}
         
         {trend !== undefined && (
           <div className={cn(
             'flex items-center gap-1 text-xs font-medium',
-            trendUp ? 'text-emerald-600' : 'text-rose-600'
+            trendUp ? 'text-emerald-400' : 'text-rose-400'
           )}>
             {trendUp ? (
               <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">

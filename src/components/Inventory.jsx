@@ -7,15 +7,20 @@ import {
   Trash2,
   Eye,
   AlertTriangle,
-  X
+  X,
+  ChevronLeft,
+  ChevronRight
 } from 'lucide-react';
 import { Card } from './ui/Card';
 import { Button } from './ui/Button';
 import { Input, Select } from './ui/Input';
 import { Badge } from './ui/Badge';
 import { Modal } from './ui/Modal';
+import { PageHeader } from './ui/PageHeader';
 import { formatCurrency, formatDate, cn } from '../lib/utils';
 import { brands, categories, conditions, statusTags } from '../data/mockData';
+
+const ITEMS_PER_PAGE = 10;
 
 export function Inventory({ products, onAddProduct, onEditProduct, onDeleteProduct }) {
   const [searchTerm, setSearchTerm] = useState('');
@@ -26,6 +31,7 @@ export function Inventory({ products, onAddProduct, onEditProduct, onDeleteProdu
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState(null);
   const [selectedProduct, setSelectedProduct] = useState(null);
+  const [currentPage, setCurrentPage] = useState(1);
 
   // Filter products
   const filteredProducts = useMemo(() => {
@@ -41,6 +47,18 @@ export function Inventory({ products, onAddProduct, onEditProduct, onDeleteProdu
       return matchesSearch && matchesBrand && matchesCategory && matchesCondition && matchesStatus;
     });
   }, [products, searchTerm, selectedBrand, selectedCategory, selectedCondition, selectedStatus]);
+
+  // Pagination
+  const totalPages = Math.ceil(filteredProducts.length / ITEMS_PER_PAGE);
+  const paginatedProducts = filteredProducts.slice(
+    (currentPage - 1) * ITEMS_PER_PAGE,
+    currentPage * ITEMS_PER_PAGE
+  );
+
+  // Reset page when filters change
+  useState(() => {
+    setCurrentPage(1);
+  }, [searchTerm, selectedBrand, selectedCategory, selectedCondition, selectedStatus]);
 
   // Get unique values for filters
   const uniqueBrands = [...new Set(products.map(p => p.brand))];
@@ -64,24 +82,23 @@ export function Inventory({ products, onAddProduct, onEditProduct, onDeleteProdu
   return (
     <div className="space-y-6 animate-fade-in">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-2xl font-bold text-navy-900">Gestão de Inventário</h2>
-          <p className="text-sm text-gray-500 mt-1">
-            {filteredProducts.length} de {products.length} produtos
-          </p>
-        </div>
-        <Button onClick={() => setIsAddModalOpen(true)}>
-          <Plus className="w-4 h-4 mr-2" />
-          Novo Produto
-        </Button>
-      </div>
+      <PageHeader
+        eyebrow="Estoque"
+        title="Gestão de Inventário"
+        subtitle={`${filteredProducts.length} de ${products.length} produtos`}
+        actions={
+          <Button onClick={() => setIsAddModalOpen(true)}>
+            <Plus className="w-4 h-4 mr-2" />
+            Novo Produto
+          </Button>
+        }
+      />
 
       {/* Filters */}
       <Card>
         <div className="flex items-center gap-2 mb-4">
-          <Filter className="w-5 h-5 text-gray-400" />
-          <h3 className="text-lg font-semibold text-navy-900">Filtros Avançados</h3>
+          <Filter className="w-5 h-5 text-slate-400" />
+          <h3 className="text-lg font-semibold text-slate-50">Filtros Avançados</h3>
           {hasActiveFilters && (
             <Button variant="ghost" size="sm" onClick={clearFilters} className="ml-auto">
               <X className="w-3 h-3 mr-1" />
@@ -142,104 +159,99 @@ export function Inventory({ products, onAddProduct, onEditProduct, onDeleteProdu
         <div className="overflow-x-auto">
           <table className="w-full">
             <thead>
-              <tr className="border-b border-border bg-surface-light">
-                <th className="text-left py-4 px-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">
+              <tr className="border-b border-slate-800 bg-slate-900/60">
+                <th className="text-left py-3.5 px-5 text-xs font-semibold text-slate-500 uppercase tracking-wider">
                   Produto
                 </th>
-                <th className="text-left py-4 px-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                <th className="text-left py-3.5 px-5 text-xs font-semibold text-slate-500 uppercase tracking-wider">
                   Marca
                 </th>
-                <th className="text-left py-4 px-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                  Categoria
-                </th>
-                <th className="text-left py-4 px-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                <th className="text-left py-3.5 px-5 text-xs font-semibold text-slate-500 uppercase tracking-wider">
                   Condição
                 </th>
-                <th className="text-left py-4 px-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                <th className="text-left py-3.5 px-5 text-xs font-semibold text-slate-500 uppercase tracking-wider">
                   IMEI
                 </th>
-                <th className="text-left py-4 px-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                <th className="text-right py-3.5 px-5 text-xs font-semibold text-slate-500 uppercase tracking-wider">
                   Preço
                 </th>
-                <th className="text-left py-4 px-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                <th className="text-center py-3.5 px-5 text-xs font-semibold text-slate-500 uppercase tracking-wider">
                   Qtd
                 </th>
-                <th className="text-left py-4 px-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                <th className="text-center py-3.5 px-5 text-xs font-semibold text-slate-500 uppercase tracking-wider">
                   Status
                 </th>
-                <th className="text-left py-4 px-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                <th className="text-right py-3.5 px-5 text-xs font-semibold text-slate-500 uppercase tracking-wider">
                   Ações
                 </th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-border">
-              {filteredProducts.map((product) => (
-                <tr 
-                  key={product.id} 
-                  className="hover:bg-surface-light transition-colors group"
+            <tbody className="divide-y divide-slate-800">
+              {paginatedProducts.map((product) => (
+                <tr
+                  key={product.id}
+                  className="hover:bg-slate-800/40 transition-colors group"
                 >
-                  <td className="py-4 px-4">
+                  <td className="py-4 px-5">
                     <div>
-                      <div className="font-medium text-navy-900">{product.name}</div>
-                      <div className="text-xs text-gray-400">
-                        Criado em {formatDate(product.createdAt)}
+                      <div className="font-medium text-slate-50">{product.name}</div>
+                      <div className="text-xs text-slate-500 mt-0.5">
+                        {formatDate(product.createdAt)}
                       </div>
                     </div>
                   </td>
-                  <td className="py-4 px-4">
-                    <span className="text-sm text-gray-600">{product.brand}</span>
+                  <td className="py-4 px-5">
+                    <span className="text-sm text-slate-300">{product.brand}</span>
                   </td>
-                  <td className="py-4 px-4">
-                    <span className="text-sm text-gray-600">{product.category}</span>
-                  </td>
-                  <td className="py-4 px-4">
+                  <td className="py-4 px-5">
                     <Badge variant={product.condition === 'Novo' ? 'success' : 'info'}>
                       {product.condition}
                     </Badge>
                   </td>
-                  <td className="py-4 px-4">
-                    <code className="text-xs bg-surface-light px-2 py-1 rounded text-gray-600 font-mono">
+                  <td className="py-4 px-5">
+                    <code className="text-xs bg-slate-800/60 border border-slate-800 px-2 py-1 rounded text-slate-300 font-mono">
                       {product.imei}
                     </code>
                   </td>
-                  <td className="py-4 px-4">
-                    <div>
-                      <div className="font-medium text-navy-900">
-                        {formatCurrency(product.salePrice)}
-                      </div>
-                      <div className="text-xs text-gray-400">
-                        Custo: {formatCurrency(product.costPrice)}
-                      </div>
+                  <td className="py-4 px-5 text-right">
+                    <div className="font-medium text-slate-50 tabular-nums">
+                      {formatCurrency(product.salePrice)}
+                    </div>
+                    <div className="text-xs text-slate-500 tabular-nums mt-0.5">
+                      Custo: {formatCurrency(product.costPrice)}
                     </div>
                   </td>
-                  <td className="py-4 px-4">
-                    <div className="flex items-center gap-2">
+                  <td className="py-4 px-5">
+                    <div className="flex items-center justify-center gap-1.5">
                       <span className={cn(
-                        'font-medium',
-                        isLowStock(product) ? 'text-rose-600' : 'text-navy-900'
+                        'font-medium tabular-nums',
+                        isLowStock(product) ? 'text-rose-400' : 'text-slate-50'
                       )}>
                         {product.quantity}
                       </span>
                       {isLowStock(product) && (
-                        <AlertTriangle className="w-4 h-4 text-rose-500" />
+                        <AlertTriangle className="w-4 h-4 text-rose-400" />
                       )}
                     </div>
                   </td>
-                  <td className="py-4 px-4">
-                    <span className={cn(
-                      'inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border',
-                      statusTags[product.status].color
-                    )}>
-                      {statusTags[product.status].label}
-                    </span>
+                  <td className="py-4 px-5">
+                    <div className="flex justify-center">
+                      <span className={cn(
+                        'inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border',
+                        statusTags[product.status].color
+                      )}>
+                        {statusTags[product.status].label}
+                      </span>
+                    </div>
                   </td>
-                  <td className="py-4 px-4">
-                    <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                  <td className="py-4 px-5">
+                    <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                       <Button
                         variant="ghost"
                         size="icon"
                         onClick={() => setSelectedProduct(product)}
                         title="Visualizar"
+                        className="text-slate-400 hover:text-slate-50 hover:bg-slate-800"
                       >
                         <Eye className="w-4 h-4" />
                       </Button>
@@ -248,6 +260,7 @@ export function Inventory({ products, onAddProduct, onEditProduct, onDeleteProdu
                         size="icon"
                         onClick={() => setEditingProduct(product)}
                         title="Editar"
+                        className="text-slate-400 hover:text-slate-50 hover:bg-slate-800"
                       >
                         <Edit className="w-4 h-4" />
                       </Button>
@@ -256,7 +269,7 @@ export function Inventory({ products, onAddProduct, onEditProduct, onDeleteProdu
                         size="icon"
                         onClick={() => onDeleteProduct(product.id)}
                         title="Excluir"
-                        className="text-rose-500 hover:text-rose-600 hover:bg-rose-50"
+                        className="text-rose-400 hover:text-rose-300 hover:bg-rose-500/10"
                       >
                         <Trash2 className="w-4 h-4" />
                       </Button>
@@ -270,11 +283,68 @@ export function Inventory({ products, onAddProduct, onEditProduct, onDeleteProdu
 
         {filteredProducts.length === 0 && (
           <div className="text-center py-12">
-            <Search className="w-12 h-12 text-gray-300 mx-auto mb-4" />
-            <p className="text-gray-500">Nenhum produto encontrado</p>
-            <p className="text-sm text-gray-400 mt-1">
+            <Search className="w-12 h-12 text-slate-600 mx-auto mb-4" />
+            <p className="text-slate-400">Nenhum produto encontrado</p>
+            <p className="text-sm text-slate-500 mt-1">
               Tente ajustar os filtros ou adicionar um novo produto
             </p>
+          </div>
+        )}
+
+        {/* Pagination */}
+        {totalPages > 1 && (
+          <div className="flex items-center justify-between px-4 py-3 border-t border-slate-800">
+            <div className="text-sm text-slate-400">
+              Página {currentPage} de {totalPages}
+            </div>
+            <div className="flex items-center gap-2">
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                disabled={currentPage === 1}
+                className="text-slate-400"
+              >
+                <ChevronLeft className="w-4 h-4" />
+              </Button>
+              <div className="flex items-center gap-1">
+                {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                  let pageNum;
+                  if (totalPages <= 5) {
+                    pageNum = i + 1;
+                  } else if (currentPage <= 3) {
+                    pageNum = i + 1;
+                  } else if (currentPage >= totalPages - 2) {
+                    pageNum = totalPages - 4 + i;
+                  } else {
+                    pageNum = currentPage - 2 + i;
+                  }
+                  return (
+                    <button
+                      key={pageNum}
+                      onClick={() => setCurrentPage(pageNum)}
+                      className={cn(
+                        'w-8 h-8 rounded-lg text-sm font-medium transition-colors',
+                        currentPage === pageNum
+                          ? 'bg-blue-500 text-white'
+                          : 'text-slate-400 hover:text-slate-50 hover:bg-slate-800'
+                      )}
+                    >
+                      {pageNum}
+                    </button>
+                  );
+                })}
+              </div>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                disabled={currentPage === totalPages}
+                className="text-slate-400"
+              >
+                <ChevronRight className="w-4 h-4" />
+              </Button>
+            </div>
           </div>
         )}
       </Card>
@@ -307,56 +377,56 @@ export function Inventory({ products, onAddProduct, onEditProduct, onDeleteProdu
           <div className="space-y-4">
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <p className="text-xs text-gray-400 mb-1">Nome</p>
-                <p className="text-navy-900 font-medium">{selectedProduct.name}</p>
+                <p className="text-xs text-slate-500 mb-1">Nome</p>
+                <p className="text-slate-50 font-medium">{selectedProduct.name}</p>
               </div>
               <div>
-                <p className="text-xs text-gray-400 mb-1">Marca</p>
-                <p className="text-navy-900">{selectedProduct.brand}</p>
+                <p className="text-xs text-slate-500 mb-1">Marca</p>
+                <p className="text-slate-50">{selectedProduct.brand}</p>
               </div>
               <div>
-                <p className="text-xs text-gray-400 mb-1">Categoria</p>
-                <p className="text-navy-900">{selectedProduct.category}</p>
+                <p className="text-xs text-slate-500 mb-1">Categoria</p>
+                <p className="text-slate-50">{selectedProduct.category}</p>
               </div>
               <div>
-                <p className="text-xs text-gray-400 mb-1">Condição</p>
+                <p className="text-xs text-slate-500 mb-1">Condição</p>
                 <Badge variant={selectedProduct.condition === 'Novo' ? 'success' : 'info'}>
                   {selectedProduct.condition}
                 </Badge>
               </div>
               <div>
-                <p className="text-xs text-gray-400 mb-1">IMEI</p>
-                <code className="text-sm bg-surface-light px-2 py-1 rounded text-gray-600 font-mono">
+                <p className="text-xs text-slate-500 mb-1">IMEI</p>
+                <code className="text-sm bg-slate-800/60 border border-slate-800 px-2 py-1 rounded text-slate-300 font-mono">
                   {selectedProduct.imei}
                 </code>
               </div>
               <div>
-                <p className="text-xs text-gray-400 mb-1">Quantidade</p>
+                <p className="text-xs text-slate-500 mb-1">Quantidade</p>
                 <p className={cn(
-                  'text-navy-900',
-                  isLowStock(selectedProduct) && 'text-rose-600'
+                  'text-slate-50',
+                  isLowStock(selectedProduct) && 'text-rose-400'
                 )}>
                   {selectedProduct.quantity} unidades
                 </p>
               </div>
               <div>
-                <p className="text-xs text-gray-400 mb-1">Preço de Custo</p>
-                <p className="text-navy-900">{formatCurrency(selectedProduct.costPrice)}</p>
+                <p className="text-xs text-slate-500 mb-1">Preço de Custo</p>
+                <p className="text-slate-50">{formatCurrency(selectedProduct.costPrice)}</p>
               </div>
               <div>
-                <p className="text-xs text-gray-400 mb-1">Preço de Venda</p>
-                <p className="text-emerald-600 font-semibold">
+                <p className="text-xs text-slate-500 mb-1">Preço de Venda</p>
+                <p className="text-emerald-400 font-semibold">
                   {formatCurrency(selectedProduct.salePrice)}
                 </p>
               </div>
               <div>
-                <p className="text-xs text-gray-400 mb-1">Margem de Lucro</p>
-                <p className="text-emerald-600">
+                <p className="text-xs text-slate-500 mb-1">Margem de Lucro</p>
+                <p className="text-emerald-400">
                   {(((selectedProduct.salePrice - selectedProduct.costPrice) / selectedProduct.salePrice) * 100).toFixed(1)}%
                 </p>
               </div>
               <div>
-                <p className="text-xs text-gray-400 mb-1">Status</p>
+                <p className="text-xs text-slate-500 mb-1">Status</p>
                 <span className={cn(
                   'inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border',
                   statusTags[selectedProduct.status].color
@@ -365,12 +435,12 @@ export function Inventory({ products, onAddProduct, onEditProduct, onDeleteProdu
                 </span>
               </div>
               <div>
-                <p className="text-xs text-gray-400 mb-1">Estoque Mínimo</p>
-                <p className="text-navy-900">{selectedProduct.minQuantity} unidades</p>
+                <p className="text-xs text-slate-500 mb-1">Estoque Mínimo</p>
+                <p className="text-slate-50">{selectedProduct.minQuantity} unidades</p>
               </div>
               <div>
-                <p className="text-xs text-gray-400 mb-1">Criado em</p>
-                <p className="text-navy-900">{formatDate(selectedProduct.createdAt)}</p>
+                <p className="text-xs text-slate-500 mb-1">Criado em</p>
+                <p className="text-slate-50">{formatDate(selectedProduct.createdAt)}</p>
               </div>
             </div>
           </div>
@@ -590,17 +660,17 @@ function AddProductModal({ isOpen, onClose, onAdd, product }) {
 
         {/* Profit preview */}
         {formData.costPrice && formData.salePrice && (
-          <div className="bg-emerald-50 border border-emerald-200 rounded-lg p-3">
+          <div className="bg-emerald-500/10 border border-emerald-500/30 rounded-lg p-3">
             <div className="flex items-center justify-between">
-              <span className="text-sm text-gray-500">Margem de Lucro Estimada</span>
-              <span className="text-emerald-600 font-semibold">
+              <span className="text-sm text-slate-400">Margem de Lucro Estimada</span>
+              <span className="text-emerald-400 font-semibold">
                 {(((parseFloat(formData.salePrice || 0) - parseFloat(formData.costPrice || 0)) / parseFloat(formData.salePrice || 1)) * 100).toFixed(1)}%
               </span>
             </div>
           </div>
         )}
 
-        <div className="flex justify-end gap-3 pt-4 border-t border-border">
+        <div className="flex justify-end gap-3 pt-4 border-t border-slate-800">
           <Button type="button" variant="secondary" onClick={onClose}>
             Cancelar
           </Button>

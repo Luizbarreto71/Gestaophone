@@ -1,8 +1,8 @@
 import { 
   LayoutDashboard, 
+  Zap,
   Package, 
-  ShoppingCart, 
-  BarChart3, 
+  FileText,
   Settings, 
   ChevronLeft, 
   ChevronRight,
@@ -13,30 +13,36 @@ import { cn } from '../lib/utils';
 
 const menuItems = [
   { icon: LayoutDashboard, label: 'Dashboard', id: 'dashboard' },
+  { icon: Zap, label: 'Operação Rápida', id: 'quick' },
   { icon: Package, label: 'Inventário', id: 'inventory' },
-  { icon: ShoppingCart, label: 'Vendas', id: 'sales' },
-  { icon: BarChart3, label: 'Relatórios', id: 'reports' },
+  { icon: FileText, label: 'Relatórios', id: 'reports' },
   { icon: Settings, label: 'Configurações', id: 'settings' },
 ];
 
-export function Sidebar({ activeTab, onTabChange, isCollapsed, onToggle }) {
+export function Sidebar({ activeTab, onTabChange, isCollapsed, onToggle, onLogout }) {
+  const handleLogout = () => {
+    if (window.confirm('Deseja sair do sistema?')) {
+      onLogout?.();
+    }
+  };
+
   return (
     <aside
       className={cn(
-        'h-full bg-surface border-r border-border flex flex-col transition-all duration-300',
+        'h-full bg-slate-900/40 border-r border-slate-800 flex flex-col transition-all duration-300 backdrop-blur-sm',
         isCollapsed ? 'w-20' : 'w-64'
       )}
     >
       {/* Logo */}
-      <div className="p-4 border-b border-border">
+      <div className="p-4 border-b border-slate-800">
         <div className="flex items-center gap-3">
-          <div className="p-2 bg-primary-50 rounded-xl">
-            <Smartphone className="w-6 h-6 text-primary-600" />
+          <div className="p-2 bg-blue-500/10 rounded-xl">
+            <Smartphone className="w-6 h-6 text-blue-400" />
           </div>
           {!isCollapsed && (
             <div>
-              <h1 className="text-lg font-bold text-navy-900">GestaoPhone</h1>
-              <p className="text-xs text-gray-400">Controle de Estoque</p>
+              <h1 className="text-lg font-bold text-slate-50">GestaoPhone</h1>
+              <p className="text-xs text-slate-500">Controle de Estoque</p>
             </div>
           )}
         </div>
@@ -51,8 +57,8 @@ export function Sidebar({ activeTab, onTabChange, isCollapsed, onToggle }) {
             className={cn(
               'w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200',
               activeTab === item.id
-                ? 'bg-primary-50 text-primary-600'
-                : 'text-gray-500 hover:text-navy-900 hover:bg-gray-50',
+                ? 'bg-blue-500/10 text-blue-400'
+                : 'text-slate-400 hover:text-slate-50 hover:bg-slate-800/60',
               isCollapsed && 'justify-center'
             )}
           >
@@ -65,10 +71,12 @@ export function Sidebar({ activeTab, onTabChange, isCollapsed, onToggle }) {
       </nav>
 
       {/* Footer */}
-      <div className="p-3 border-t border-border">
+      <div className="p-3 border-t border-slate-800">
         <button
+          onClick={handleLogout}
+          title="Sair"
           className={cn(
-            'w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-gray-500 hover:text-rose-600 hover:bg-rose-50 transition-all duration-200',
+            'w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-slate-400 hover:text-rose-400 hover:bg-rose-500/10 transition-all duration-200',
             isCollapsed && 'justify-center'
           )}
         >
@@ -82,7 +90,7 @@ export function Sidebar({ activeTab, onTabChange, isCollapsed, onToggle }) {
       {/* Collapse Toggle */}
       <button
         onClick={onToggle}
-        className="absolute -right-3 top-20 p-1.5 bg-surface border border-border rounded-full text-gray-400 hover:text-navy-900 hover:bg-gray-50 transition-colors"
+        className="absolute -right-3 top-20 p-1.5 bg-slate-900 border border-slate-800 rounded-full text-slate-400 hover:text-slate-50 hover:bg-slate-800 transition-colors"
       >
         {isCollapsed ? (
           <ChevronRight className="w-4 h-4" />

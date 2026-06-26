@@ -1,6 +1,4 @@
 import {
-  LineChart,
-  Line,
   AreaChart,
   Area,
   PieChart,
@@ -16,78 +14,88 @@ import {
 import {
   DollarSign,
   TrendingUp,
-  AlertTriangle,
+  Package,
   PieChart as PieChartIcon,
-  Package
+  AlertTriangle
 } from 'lucide-react';
 import { Card, MetricCard } from './ui/Card';
+import { PageHeader } from './ui/PageHeader';
 import { formatCurrency } from '../lib/utils';
-import { calculateMetrics, weeklySalesData, stockTurnoverData, monthlyTrendData } from '../data/mockData';
+import { calculateMetrics, calculateStockTurnover, monthlyTrendData } from '../data/mockData';
 
-export function Dashboard({ products }) {
-  const metrics = calculateMetrics(products, weeklySalesData);
+function ChartEmpty({ message = 'Sem dados ainda' }) {
+  return (
+    <div className="h-full w-full flex flex-col items-center justify-center text-center">
+      <div className="w-12 h-12 rounded-xl bg-slate-800/60 border border-slate-800 flex items-center justify-center mb-3">
+        <TrendingUp className="w-5 h-5 text-slate-600" />
+      </div>
+      <p className="text-sm text-slate-500">{message}</p>
+      <p className="text-xs text-slate-600 mt-1">Os dados aparecem conforme você registra operações</p>
+    </div>
+  );
+}
 
-  const CustomTooltip = ({ active, payload, label }) => {
-    if (active && payload && payload.length) {
-      return (
-        <div className="bg-surface border border-border rounded-lg p-3 shadow-lg">
-          <p className="text-sm font-medium text-navy-900 mb-1">{label}</p>
-          {payload.map((entry, index) => (
-            <p key={index} className="text-xs text-gray-500">
-              <span style={{ color: entry.color }} className="font-medium">
-                {entry.name}:
-              </span>{' '}
-              {formatCurrency(entry.value)}
-            </p>
-          ))}
-        </div>
-      );
-    }
-    return null;
-  };
-
-  const PieTooltip = ({ active, payload }) => {
-    if (active && payload && payload.length) {
-      const data = payload[0];
-      return (
-        <div className="bg-surface border border-border rounded-lg p-3 shadow-lg">
-          <p className="text-sm font-medium text-navy-900">{data.name}</p>
-          <p className="text-xs text-gray-500">
-            Giro: {data.value}%
+function CustomTooltip({ active, payload, label }) {
+  if (active && payload && payload.length) {
+    return (
+      <div className="bg-slate-900 border border-slate-800 rounded-lg p-3 shadow-xl">
+        <p className="text-sm font-medium text-slate-50 mb-1">{label}</p>
+        {payload.map((entry, index) => (
+          <p key={index} className="text-xs text-slate-400">
+            <span style={{ color: entry.color }} className="font-medium">
+              {entry.name}:
+            </span>{' '}
+            {formatCurrency(entry.value)}
           </p>
-        </div>
-      );
-    }
-    return null;
-  };
+        ))}
+      </div>
+    );
+  }
+  return null;
+}
+
+function PieTooltip({ active, payload }) {
+  if (active && payload && payload.length) {
+    const data = payload[0];
+    return (
+      <div className="bg-slate-900 border border-slate-800 rounded-lg p-3 shadow-xl">
+        <p className="text-sm font-medium text-slate-50">{data.name}</p>
+        <p className="text-xs text-slate-400">
+          Giro: {data.value}%
+        </p>
+      </div>
+    );
+  }
+  return null;
+}
+
+export function Dashboard({ products, weeklySalesData }) {
+  const totalSales = weeklySalesData.reduce((acc, s) => acc + s.sales, 0);
+  const metrics = calculateMetrics(products, weeklySalesData);
+  const stockTurnover = calculateStockTurnover(products);
 
   return (
     <div className="space-y-6 animate-fade-in">
       {/* Header */}
-      <div>
-        <h2 className="text-2xl font-bold text-navy-900">Dashboard de B.I.</h2>
-        <p className="text-sm text-gray-500 mt-1">
-          Visão geral de desempenho e métricas da loja
-        </p>
-      </div>
+      <PageHeader
+        eyebrow="Painel"
+        title="Dashboard de B.I."
+        subtitle="Visão geral de desempenho e métricas da loja"
+      />
 
       {/* Metric Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-6">
         <MetricCard
           icon={Package}
           title="Total em Estoque"
           value={formatCurrency(metrics.totalStockValue)}
-          subtitle={`${products.length} produtos cadastrados`}
-          trend="12.5%"
-          trendUp={true}
+          subtitle={`${metrics.totalUnits} unidades`}
         />
         <MetricCard
           icon={DollarSign}
-          title="Vendas do Mês"
-          value={formatCurrency(metrics.totalSales)}
-          subtitle="Últimas 8 semanas"
-          trend="8.3%"
-          trendUp={true}
+          title="Vendas Acumuladas"
+          value={formatCurrency(totalSales)}
+          subtitle="Total registrado"
         />
         <MetricCard
           icon={AlertTriangle}
@@ -100,8 +108,6 @@ export function Dashboard({ products }) {
           title="Margem de Lucro"
           value={`${metrics.avgMargin}%`}
           subtitle="Média geral"
-          trend="2.1%"
-          trendUp={true}
         />
       </div>
 
@@ -110,31 +116,34 @@ export function Dashboard({ products }) {
         {/* Weekly Sales Chart */}
         <Card className="lg:col-span-2">
           <div className="mb-6">
-            <h3 className="text-lg font-semibold text-navy-900">Evolução das Vendas</h3>
-            <p className="text-sm text-gray-500">Desempenho semanal de vendas e lucro</p>
+            <h3 className="text-lg font-semibold text-slate-50">Evolução das Vendas</h3>
+            <p className="text-sm text-slate-400">Desempenho semanal de vendas e lucro</p>
           </div>
           <div className="h-72">
+            {weeklySalesData.length === 0 ? (
+              <ChartEmpty message="Nenhuma venda registrada" />
+            ) : (
             <ResponsiveContainer width="100%" height="100%">
               <AreaChart data={weeklySalesData}>
                 <defs>
                   <linearGradient id="colorSales" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#2563eb" stopOpacity={0.3}/>
-                    <stop offset="95%" stopColor="#2563eb" stopOpacity={0}/>
+                    <stop offset="5%" stopColor="#3B82F6" stopOpacity={0.3}/>
+                    <stop offset="95%" stopColor="#3B82F6" stopOpacity={0}/>
                   </linearGradient>
                   <linearGradient id="colorProfit" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#059669" stopOpacity={0.3}/>
-                    <stop offset="95%" stopColor="#059669" stopOpacity={0}/>
+                    <stop offset="5%" stopColor="#10B981" stopOpacity={0.3}/>
+                    <stop offset="95%" stopColor="#10B981" stopOpacity={0}/>
                   </linearGradient>
                 </defs>
-                <CartesianGrid strokeDasharray="3 3" stroke="#E2E8F0" />
+                <CartesianGrid strokeDasharray="3 3" stroke="#334155" />
                 <XAxis 
                   dataKey="week" 
-                  stroke="#94A3B8" 
+                  stroke="#64748B" 
                   fontSize={12}
                   tickLine={false}
                 />
                 <YAxis 
-                  stroke="#94A3B8" 
+                  stroke="#64748B" 
                   fontSize={12}
                   tickLine={false}
                   tickFormatter={(value) => `R$${(value/1000).toFixed(0)}k`}
@@ -145,7 +154,7 @@ export function Dashboard({ products }) {
                   type="monotone"
                   dataKey="sales"
                   name="Vendas"
-                  stroke="#2563eb"
+                  stroke="#3B82F6"
                   strokeWidth={2}
                   fillOpacity={1}
                   fill="url(#colorSales)"
@@ -154,27 +163,31 @@ export function Dashboard({ products }) {
                   type="monotone"
                   dataKey="profit"
                   name="Lucro"
-                  stroke="#059669"
+                  stroke="#10B981"
                   strokeWidth={2}
                   fillOpacity={1}
                   fill="url(#colorProfit)"
                 />
               </AreaChart>
             </ResponsiveContainer>
+            )}
           </div>
         </Card>
 
         {/* Stock Turnover Chart */}
         <Card>
           <div className="mb-6">
-            <h3 className="text-lg font-semibold text-navy-900">Giro de Estoque</h3>
-            <p className="text-sm text-gray-500">Por marca</p>
+            <h3 className="text-lg font-semibold text-slate-50">Giro de Estoque</h3>
+            <p className="text-sm text-slate-400">Por marca</p>
           </div>
           <div className="h-52">
+            {stockTurnover.length === 0 ? (
+              <ChartEmpty message="Sem estoque disponível" />
+            ) : (
             <ResponsiveContainer width="100%" height="100%">
               <PieChart>
                 <Pie
-                  data={stockTurnoverData}
+                  data={stockTurnover}
                   cx="50%"
                   cy="50%"
                   innerRadius={50}
@@ -182,25 +195,26 @@ export function Dashboard({ products }) {
                   paddingAngle={2}
                   dataKey="value"
                   label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
-                  labelLine={{ stroke: '#CBD5E1', strokeWidth: 1 }}
+                  labelLine={{ stroke: '#475569', strokeWidth: 1 }}
                 >
-                  {stockTurnoverData.map((entry, index) => (
+                  {stockTurnover.map((entry, index) => (
                     <Cell key={`cell-${index}`} fill={entry.color} />
                   ))}
                 </Pie>
                 <Tooltip content={<PieTooltip />} />
               </PieChart>
             </ResponsiveContainer>
+            )}
           </div>
           {/* Legend */}
           <div className="grid grid-cols-2 gap-2 mt-4">
-            {stockTurnoverData.map((item, index) => (
+            {stockTurnover.map((item, index) => (
               <div key={index} className="flex items-center gap-2">
                 <div 
                   className="w-3 h-3 rounded-full flex-shrink-0" 
                   style={{ backgroundColor: item.color }}
                 />
-                <span className="text-xs text-gray-500 truncate">{item.name}</span>
+                <span className="text-xs text-slate-400 truncate">{item.name}</span>
               </div>
             ))}
           </div>
@@ -210,47 +224,61 @@ export function Dashboard({ products }) {
       {/* Monthly Trend Chart */}
       <Card>
         <div className="mb-6">
-          <h3 className="text-lg font-semibold text-navy-900">Tendência Mensal</h3>
-          <p className="text-sm text-gray-500">Receita vs Custos</p>
+          <h3 className="text-lg font-semibold text-slate-50">Tendência Mensal</h3>
+          <p className="text-sm text-slate-400">Receita vs Custos</p>
         </div>
         <div className="h-64">
+          {monthlyTrendData.length === 0 ? (
+            <ChartEmpty message="Sem histórico mensal" />
+          ) : (
           <ResponsiveContainer width="100%" height="100%">
-            <LineChart data={monthlyTrendData}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#E2E8F0" />
+            <AreaChart data={monthlyTrendData}>
+              <defs>
+                <linearGradient id="colorRevenue" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="5%" stopColor="#3B82F6" stopOpacity={0.3}/>
+                  <stop offset="95%" stopColor="#3B82F6" stopOpacity={0}/>
+                </linearGradient>
+                <linearGradient id="colorCosts" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="5%" stopColor="#F59E0B" stopOpacity={0.3}/>
+                  <stop offset="95%" stopColor="#F59E0B" stopOpacity={0}/>
+                </linearGradient>
+              </defs>
+              <CartesianGrid strokeDasharray="3 3" stroke="#334155" />
               <XAxis 
                 dataKey="month" 
-                stroke="#94A3B8" 
+                stroke="#64748B" 
                 fontSize={12}
                 tickLine={false}
               />
               <YAxis 
-                stroke="#94A3B8" 
+                stroke="#64748B" 
                 fontSize={12}
                 tickLine={false}
                 tickFormatter={(value) => `R$${(value/1000).toFixed(0)}k`}
               />
               <Tooltip content={<CustomTooltip />} />
               <Legend />
-              <Line
+              <Area
                 type="monotone"
                 dataKey="revenue"
                 name="Receita"
-                stroke="#2563eb"
-                strokeWidth={3}
-                dot={{ r: 4, fill: '#2563eb', strokeWidth: 2 }}
-                activeDot={{ r: 6, fill: '#2563eb' }}
+                stroke="#3B82F6"
+                strokeWidth={2}
+                fillOpacity={1}
+                fill="url(#colorRevenue)"
               />
-              <Line
+              <Area
                 type="monotone"
                 dataKey="costs"
                 name="Custos"
-                stroke="#d97706"
-                strokeWidth={3}
-                dot={{ r: 4, fill: '#d97706', strokeWidth: 2 }}
-                activeDot={{ r: 6, fill: '#d97706' }}
+                stroke="#F59E0B"
+                strokeWidth={2}
+                fillOpacity={1}
+                fill="url(#colorCosts)"
               />
-            </LineChart>
+            </AreaChart>
           </ResponsiveContainer>
+          )}
         </div>
       </Card>
     </div>
